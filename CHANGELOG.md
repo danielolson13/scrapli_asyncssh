@@ -3,6 +3,7 @@ CHANGELOG
 
 # 2020.XX.XX
 - Minor internal updates to appease updated pylint/isort
+- Add 3.9 to actions, update pins, try to behave like an adult :D
 
 # 2020.07.04
 - Disable ssh agent for now -- this will probably get supported/added in the future, but can cause hard to

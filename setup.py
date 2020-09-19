@@ -19,7 +19,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/scrapli/scrapli_asyncssh",
     packages=setuptools.find_packages(),
-    install_requires=["scrapli>=2020.06.06", "asyncssh>=2.2.1"],
+    install_requires=["scrapli>=2020.06.06", "asyncssh>=2.2.1,<3.0.0"],
     extras_require={},
     classifiers=[
         "License :: OSI Approved :: MIT License",
@@ -27,6 +27,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Operating System :: POSIX :: Linux",
         "Operating System :: MacOS",
     ],
