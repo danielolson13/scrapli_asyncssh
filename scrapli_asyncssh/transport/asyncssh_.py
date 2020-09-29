@@ -7,9 +7,12 @@ from asyncssh import connect
 from asyncssh.connection import SSHClientConnection
 from asyncssh.misc import PermissionDenied
 from asyncssh.stream import SSHReader, SSHWriter
-
 from scrapli.decorators import requires_open_session
-from scrapli.exceptions import KeyVerificationFailed, ScrapliAuthenticationFailed, ScrapliTimeout
+from scrapli.exceptions import (
+    KeyVerificationFailed,
+    ScrapliAuthenticationFailed,
+    ScrapliTimeout,
+)
 from scrapli.ssh_config import SSHConfig, SSHKnownHosts
 from scrapli.transport import AsyncTransport
 
@@ -25,13 +28,13 @@ ASYNCSSH_TRANSPORT_ARGS = (
 
 
 class AsyncSSHTransport(AsyncTransport):
-    def __init__(
+    def __init__(  # nosec
         self,
         host: str,
         port: int = -1,
         auth_username: str = "",
         auth_private_key: str = "",
-        auth_password: str = "",
+        auth_password: str = "",  # nosec
         auth_strict_key: bool = True,
         timeout_socket: int = 5,
         timeout_transport: int = 5,
@@ -42,6 +45,7 @@ class AsyncSSHTransport(AsyncTransport):
         keepalive_pattern: str = "\005",
         ssh_config_file: str = "",
         ssh_known_hosts_file: str = "",
+        transport_options: Optional[Dict[str, Any]] = None,
     ) -> None:
         """
         AsyncSSHTransport Object
@@ -73,6 +77,10 @@ class AsyncSSHTransport(AsyncTransport):
                 type is 'network'
             ssh_config_file: string to path for ssh config file
             ssh_known_hosts_file: string to path for ssh known hosts file
+            transport_options: AsyncSSHTransport specific transport options (options that don't
+                apply to any of the other transport classes) supplied in a dictionary where the key
+                is the name of the option and the value is of course the value. These options are passed to
+                'asyncssh.connect()'
 
         Returns:
             N/A  # noqa: DAR202
@@ -81,10 +89,15 @@ class AsyncSSHTransport(AsyncTransport):
             N/A
 
         """
-        cfg_port, cfg_user, cfg_private_key = self._process_ssh_config(host, ssh_config_file)
+        cfg_port, cfg_user, cfg_private_key = self._process_ssh_config(
+            host, ssh_config_file
+        )
 
         if port == -1:
             port = cfg_port or 22
+
+        # ensure we set transport_options to a dict if its left as None
+        self.transport_options = transport_options or {}
 
         super().__init__(
             host,
@@ -114,7 +127,9 @@ class AsyncSSHTransport(AsyncTransport):
         self.stderr: SSHReader
 
     @staticmethod
-    def _process_ssh_config(host: str, ssh_config_file: str) -> Tuple[Optional[int], str, str]:
+    def _process_ssh_config(
+        host: str, ssh_config_file: str
+    ) -> Tuple[Optional[int], str, str]:
         """
         Method to parse ssh config file
 
@@ -197,7 +212,9 @@ class AsyncSSHTransport(AsyncTransport):
 
         """
         if self.auth_strict_key:
-            self.logger.debug(f"Attempting to validate {self.host} public key is in known hosts")
+            self.logger.debug(
+                f"Attempting to validate {self.host} public key is in known hosts"
+            )
             self._verify_key()
 
         self.session_lock.acquire()
@@ -239,9 +256,14 @@ class AsyncSSHTransport(AsyncTransport):
             "agent_path": None,
         }
 
+        if self.transport_options:
+            common_args.update(**self.transport_options)
+
         if self.auth_private_key:
             if await self._authenticate_private_key(common_args=common_args):
-                self.logger.debug(f"Authenticated to host {self.host} with public key auth")
+                self.logger.debug(
+                    f"Authenticated to host {self.host} with public key auth"
+                )
                 return
             if not self.auth_password or not self.auth_username:
                 msg = (
@@ -316,7 +338,8 @@ class AsyncSSHTransport(AsyncTransport):
         """
         try:
             self.session = await asyncio.wait_for(
-                connect(password=self.auth_password, **common_args), timeout=self.timeout_socket
+                connect(password=self.auth_password, **common_args),
+                timeout=self.timeout_socket,
             )
             return True
         except asyncio.TimeoutError as exc:
@@ -391,7 +414,8 @@ class AsyncSSHTransport(AsyncTransport):
         try:
             if (
                 isauthenticated
-                and self.session._transport.is_closing() is False  # pylint:  disable=W0212
+                and self.session._transport.is_closing()
+                is False  # pylint:  disable=W0212
             ):
                 return True
         except AttributeError:
